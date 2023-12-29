@@ -1,4 +1,3 @@
-import numpy as np
 import pygame as pg
 from data.vfx.ParticleGroup import ParticleGroup
 from data.vfx.StarParticle import StarParticle
@@ -38,8 +37,6 @@ class Game:
         self.elapsed_time = time()
         self.delta = time() - self.elapsed_time
 
-    # TODO: optimizar colisiones para que solo se compruebe
-    #       cuando existan posibilidad de colisiones entre los sprites
     def __handle_collisions(self) -> None:
         """
         Controla las posiciones de los sprites para asi
@@ -89,12 +86,43 @@ class Game:
         self.delta: float = time() - self.elapsed_time
         self.elapsed_time: float = time()
 
+    def handle_events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.running = False
+                break
+
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self.running = False
+                    break
+
+                if event.key == pg.K_p:
+                    self.toggle_pause()
+
+            if event.type == pg.JOYBUTTONDOWN:
+                if event.button == 7:
+                    self.toggle_pause()
+
+            if event.type == pg.JOYDEVICEADDED:
+                joysticks.append(
+                    pg.joystick.Joystick(event.device_index))
+                joy_count = pg.joystick.get_count()
+                print(f"joystick {event.device_index} connected\n"
+                        f"\tactual joysticks: {joy_count}")
+
+            if event.type == pg.JOYDEVICEREMOVED:
+                del joysticks[event.instance_id]
+                joy_count = pg.joystick.get_count()
+                print(f"joystick {event.instance_id} disconnected\n"
+                        f"\tactual joysticks: {joy_count}")
+
     def toggle_pause(self) -> None:
         """Invierte el estado de pausado del juego"""
         self.__paused = not self.__paused
 
-
     def run(self) -> None:
+        self.handle_events()
         screen.fill(colors['black'])
 
         if not self.__paused:
