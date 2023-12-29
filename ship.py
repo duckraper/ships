@@ -7,13 +7,11 @@ class Ship(pg.sprite.Sprite):
     """Clase que representa una nave en el juego"""
 
     __ANIMATION_SPEED = 4
-    # speed = 700
-    speed = calculate_speed(800)
-    rotation_rate = 5
-    shot_cd = 500  # 1000 ms = 1 s
+    speed: int = calculate_speed(800)
+    shot_cd = 200  # shots cooldown(ms)
     MAX_LIFE = 200
 
-    def __init__(self, side: str, position: tuple[int, int]) -> None:
+    def __init__(self, side: str, position, rotation) -> None:
         """
         Inicializa una nueva instancia de la clase Ship.
         """
@@ -26,8 +24,6 @@ class Ship(pg.sprite.Sprite):
         self.prev_life: int = self.life
         self.side: str = side
 
-        # asignacion de controles
-        # por defecto el izquierdo siempre tiene el primer mando
         if pg.joystick.get_count() > 0 and self.side == "left":
             self.joystick = joysticks[0]
         elif pg.joystick.get_count() > 1 and self.side == "right":
@@ -47,14 +43,15 @@ class Ship(pg.sprite.Sprite):
         self.image: Surface = self.__spritesheet[self.__current_sprite]
         self.rect = self.image.get_rect(center=position)
         self.mask = pg.mask.from_surface(self.image)
-        self.rotation: int = 0
+        
+        self.rotation_rate = 4
+        self.rotation: int = rotation
         self.radians = radians(self.rotation)
 
-        # Manejo de los disparos
-        self.max_ammo = 3
+        self.max_ammo = 3.6
         self.shots = pg.sprite.Group()
         self.shot_timer: int = 0
-        self.shots_speed = 500  # de momento pongo 500 por defecto
+        self.shots_speed = calculate_speed(1000)
 
         # Manejo de las vibraciones
         # Duración de la vibración (en milisegundos)
@@ -75,109 +72,53 @@ class Ship(pg.sprite.Sprite):
                 if key[pg.K_SPACE]:
                     self.shoot()
                 
-                if key[pg.K_UP]:
+                if key[pg.K_UP] or key[pg.K_w]:
                     dx = self.speed * sin(self.radians)
                     dy = self.speed * cos(self.radians)
 
                     self.rect.x -= dx * delta
                     self.rect.y -= dy * delta
                 
-                if key[pg.K_DOWN]:
-                    dx = self.speed * sin(self.radians)
-                    dy = self.speed * cos(self.radians)
+                elif key[pg.K_DOWN] or key[pg.K_s]:
+                    dx = (self.speed // 2) * sin(self.radians)
+                    dy = (self.speed // 2) * cos(self.radians)
 
                     self.rect.x += dx * delta
                     self.rect.y += dy * delta
 
-                if key[pg.K_LEFT]:
-                    dx = self.speed * sin(self.radians)
-                    dy = self.speed * cos(self.radians)
-
-                    self.rect.x += dx * delta
-                    self.rect.y += dy * delta
-
-                if key[pg.K_DOWN]:
-                    dx = self.speed * sin(self.radians)
-                    dy = self.speed * cos(self.radians)
-
-                    self.rect.x += dx * delta
-                    self.rect.y += dy * delta
-
-
-                if key[pg.K_z]:
+                if key[pg.K_LEFT] or key[pg.K_a]:
                     rotation += self.rotation_rate
-                if key[pg.K_x]:
+
+                if key[pg.K_RIGHT] or key[pg.K_d]:
+                    rotation -= self.rotation_rate
+                    
+            elif self.side == "left" and self.joystick is not None:
+                if self.joystick.get_button(0):
+                    self.shoot()
+                
+                # DEADZONE = -0.0001
+                if -1 <= self.joystick.get_axis(1) < -0.0001:
+                    dx = self.speed * sin(self.radians)
+                    dy = self.speed * cos(self.radians)
+
+                    self.rect.x -= dx * delta
+                    self.rect.y -= dy * delta
+
+                elif 0 < self.joystick.get_axis(1) <= 1:
+                    dx = (self.speed // 2) * sin(self.radians)
+                    dy = (self.speed // 2) * cos(self.radians)
+
+                    self.rect.x += dx * delta
+                    self.rect.y += dy * delta
+
+                # TODO: rectificar los triggers
+                if self.joystick.get_axis(4) > 0:
+                    rotation += self.rotation_rate
+
+                if self.joystick.get_axis(5) > 0:
                     rotation -= self.rotation_rate
 
-            elif self.side == "left":
-                pass
-
         self.rotation += rotation
-
-    # def __input(self, delta) -> None:
-    #     """
-    #     Captura las teclas y llama las funciones correspondientes
-    #     """
-
-    #     key = pg.key.get_pressed()
-    #     movement = pg.Vector2(0, 0)
-    #     rotation = 0
-
-    #     if self.moving:
-    #         # TODO: implementar los controles con mando del derecho
-    #         if self.side == "right":  # teclas del derecho
-    #             if key[pg.K_SPACE]:
-    #                 self.shoot()
-
-    #             if key[pg.K_UP]:
-    #                 movement.y -= 1
-    #             elif key[pg.K_DOWN]:
-    #                 movement.y += 1
-    #             if key[pg.K_LEFT]:
-    #                 movement.x -= 1
-    #             elif key[pg.K_RIGHT]:
-    #                 movement.x += 1
-
-    #             if key[pg.K_x]:
-    #                 rotation -= self.rotation_rate
-    #             if key[pg.K_z]:
-    #                 rotation += self.rotation_rate
-
-    #         else:  # teclas del izquierdo
-    #             if self.joystick is not None:
-    #                 if self.joystick.get_button(0):
-    #                     self.shoot()
-
-    #                 x: int = 0
-    #                 y: int = 0
-
-    #                 # izq <-> der
-    #                 if -1 <= self.joystick.get_axis(0) < 0:
-    #                     x = -1
-    #                 elif 0 < self.joystick.get_axis(0) <= 1:
-    #                     x = 1
-
-    #                 # down <-> up
-    #                 # DEADZONE = -0.0001
-    #                 if -1 <= self.joystick.get_axis(1) < -0.0001:
-    #                     y = -1
-    #                 elif 0 < self.joystick.get_axis(1) <= 1:
-    #                     y = 1
-
-    #                 movement.x += x
-    #                 movement.y += y
-
-    #                 # rotate LT <-> RT
-    #                 if self.joystick.get_axis(4) > -1:
-    #                     rotation -= self.rotation_rate
-    #                 if self.joystick.get_axis(5) > -1:
-    #                     rotation += self.rotation_rate
-
-    #     movement *= self.speed * delta
-    #     rotation *= self.rotation_rate * delta
-
-    #     self.rect.center += movement
-    #     self.rotation += rotation
 
     def __shake(self, delta) -> None:
         """

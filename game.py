@@ -1,9 +1,11 @@
-import pygame.sprite
-
+import numpy as np
+import pygame as pg
+from data.vfx.ParticleGroup import ParticleGroup
+from data.vfx.StarParticle import StarParticle
 from time import time
 from resources import *
 from ship import Ship
-
+from random import randint
 
 class Game:
     def __init__(self) -> None:
@@ -12,15 +14,17 @@ class Game:
 
         self.fullscreen = False
 
+        self.stars = ParticleGroup(randint(5, 10), StarParticle)
+
         get_joystick()
 
         pg.display.set_caption("ships project")
         # pg.display.set_icon() # TODO: ponerle icono al juego
 
-        offset = 150
+        offset = 400
 
-        left_ship = Ship("left", (offset, screen_height // 2))
-        right_ship = Ship("right", (screen_width - offset, screen_height // 2))
+        left_ship = Ship("left", (offset, screen_height // 2), 90)
+        right_ship = Ship("right", (screen_width - offset, screen_height // 2), -90)
 
         
         self.ships = pg.sprite.Group(left_ship, right_ship)
@@ -89,14 +93,17 @@ class Game:
         """Invierte el estado de pausado del juego"""
         self.__paused = not self.__paused
 
+
     def run(self) -> None:
-        screen.fill(color['black'])
+        screen.fill(colors['black'])
 
         if not self.__paused:
+            self.stars.update(self.delta)
+
             self.ships.update(self.delta)
             if len(self.ships.sprites()) >= 2:
                 self.__handle_collisions()
 
+        self.stars.draw(screen)
         self.ships.draw(screen)
-
         self.__update()

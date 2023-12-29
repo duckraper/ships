@@ -17,13 +17,21 @@ if __name__ == "__main__":
 
         while game.running:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
+                if event.type == pygame.QUIT:
                     game.running = False
                     break
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game.running = False
+                        break
 
-                if event.type == pygame.key.get_pressed()[pygame.K_p] or \
-                        (event.type == pygame.JOYBUTTONDOWN and event.button == 7):
-                    game.toggle_pause()
+                    if event.key == pygame.K_p:
+                        game.toggle_pause()
+                
+                if event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 7:
+                        game.toggle_pause()
 
                 if event.type == pygame.JOYDEVICEADDED:
                     joysticks.append(pygame.joystick.Joystick(event.device_index))

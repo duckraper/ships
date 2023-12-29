@@ -1,6 +1,7 @@
 """ARCHIVO DE RECURSOS E IMPORTACIONES PARA EL JUEGO"""
 import pygame as pg
 import os
+import random
 from pathlib import Path
 from pygame.surface import Surface
 from pygame.math import Vector2
@@ -14,8 +15,9 @@ screen_width, screen_height = screen_size
 screen: Surface = pg.display.set_mode(screen_size, pg.NOFRAME)
 
 FPS = 60
-print(pg.display.get_desktop_sizes())
+
 SPRITE_SIZE: tuple[int, int] = (screen_width//15, screen_width // 15)
+# SPRITE_SIZE = (screen_width//4, screen_width// 4)
 
 # script_directory: str = os.path.dirname(__file__)
 script_directory: Path = Path(__file__).resolve().parent
@@ -54,12 +56,13 @@ spritesheet: dict[str, Surface | list[Surface]] = {
     "normal_shot": load_sprites("blasts/normal_shot", "normal_shot-0{i}.png")
 }
 
-color = {
-    "black": (18, 22, 25),  # naves y disparos
-    "jasmine": (244, 213, 141),  # background
-    "pink": (147, 47, 109),  # poderes aun no se
-    "gray": (154, 160, 168),  # no se bro no singo
-    "red": (165, 1, 4),  # supongo que pa efectos y GUI
+colors = {
+    "black": (18, 22, 25),
+    "jasmine": (244, 213, 141),
+    "pink": (147, 47, 109),
+    "gray": (154, 160, 168),
+    "red": (165, 1, 4),
+    "white": (250, 250, 250)
 }
 
 movement: dict[str, Vector2] = {
@@ -93,3 +96,18 @@ def calculate_speed(base_speed, width=screen_width):
     scale_factor = screen_width // 600
     adaptive_speed = int(base_speed * scale_factor)
     return adaptive_speed
+
+
+def generate_light_color():
+    # Generar valores de color claro
+    red_channel = random.randint(180, 255)
+    green_channel = random.randint(180, 255)
+    blue_channel = random.randint(160, 255)
+
+    # Agregar variabilidad al color para evitar colores demasiado similares
+    variation = random.randint(0, 30)
+    red_channel = min(255, red_channel + variation)
+    green_channel = min(255, green_channel + variation)
+    blue_channel = min(255, blue_channel + variation)
+
+    return red_channel, green_channel, blue_channel
